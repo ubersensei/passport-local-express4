@@ -91,7 +91,8 @@ var app = express();
   app.use(session({
     resave:true,
     saveUninitialized:true,
-    secret: 'keyboard cat'
+    secret: 'keyboard cat',
+    name: 'jsessionid'
   }));
   app.use(flash());
   // Initialize Passport!  Also use passport.session() middleware, to support
@@ -102,6 +103,7 @@ var app = express();
 
 
 app.get('/', function(req, res){
+  console.log('sessionid: ' + req.sessionID + ' jsessionid' + req.cookies['jsessionid']);
   res.render('index', { user: (typeof(req.user) == 'undefined' ? false : req.user) });
 });
 
@@ -109,8 +111,17 @@ app.get('/account', ensureAuthenticated, function(req, res){
   res.render('account', { user: req.user });
 });
 
+var regenFlag = 0;
 app.get('/login', function(req, res){
-  res.render('login', { user: req.user, message: req.flash('error') });
+    if (regenFlag === 0) {
+        req.session.regenerate(function(err) {
+            console.log('Regenerated sessionid: ' + req.sessionID  + ' jsessionid' + req.cookies['jsessionid']);
+            res.render('index', { user: (typeof(req.user) == 'undefined' ? false : req.user) });
+        });
+        regenFlag = 1;
+    } else {
+        res.render('login', { user: req.user, message: req.flash('error') });
+    }
 });
 
 // POST /login
